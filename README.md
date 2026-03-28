@@ -1,6 +1,6 @@
-# VeriStake
+# BetOnMe
 
-VeriStake is a decentralized credibility layer where reputation is continuously priced by community stake on Monad testnet.
+BetOnMe is a decentralized credibility layer where reputation is continuously priced by community stake on Monad testnet.
 
 The product narrative is trust and accountability, not betting:
 
@@ -15,7 +15,7 @@ The product narrative is trust and accountability, not betting:
 - Evidence requirement: stake at or above threshold requires reason.
 - Real-time refresh: contract events update profile views.
 - Monad burst demo: one button triggers multiple rapid stake actions.
-- Optional AI summary: credibility summary while creating a profile.
+- Cloudinary profile images with on-chain image URL support.
 
 ## Project Structure
 
@@ -79,7 +79,7 @@ npm run deploy:monad
 
 Expected output:
 
-- VeriStake deployed to: 0x...
+- Contract deployed to: 0x...
 
 ## Frontend Setup
 
@@ -100,7 +100,8 @@ Update values:
 
 - NEXT_PUBLIC_VERISTAKE_ADDRESS=deployed_contract_address
 - `NEXT_PUBLIC_MONAD_RPC_URL=https://testnet-rpc.monad.xyz`
-- GEMINI_API_KEY=optional_for_ai_summary
+- NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your_cloud_name
+- NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=your_unsigned_upload_preset
 
 1. Run app
 
@@ -119,7 +120,7 @@ Open <http://localhost:3000>
 ## 3-Minute Live Demo Flow
 
 1. Connect MetaMask.
-2. Create a profile and generate AI credibility summary.
+2. Create a profile with image upload.
 3. Open that profile.
 4. Stake FOR with evidence.
 5. Stake AGAINST with evidence.
@@ -127,6 +128,6 @@ Open <http://localhost:3000>
 
 ## Notes for Judges
 
-- VeriStake turns credibility into a transparent, dynamic market signal.
+- BetOnMe turns credibility into a transparent, dynamic market signal.
 - Evidence-backed staking creates accountability.
 - Monad throughput is demonstrated through burst interactions and fast UI refresh.
