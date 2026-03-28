@@ -1,83 +1,61 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount, usePublicClient, useWriteContract } from "wagmi";
+import { type CloudinaryUploadWidgetResults } from "next-cloudinary";
+import { decodeEventLog } from "viem";
 import { veriStakeAbi } from "@/lib/abi";
-import {
-  getRandomPlaceholderImage,
-  saveProfileImageForId,
-} from "@/lib/profileImages";
 import { VERISTAKE_ADDRESS } from "@/lib/constants";
+
+// Import dynamically to avoid build-time cloud name requirement
+const CldUploadWidget = dynamic(
+  () => import("next-cloudinary").then((m) => m.CldUploadWidget),
+  { ssr: false },
+);
+
+// Default placeholder images for fallback
+const PLACEHOLDER_IMAGES = [
+  "/download%20(4).jpg",
+  "/download%20(5).jpg",
+  "/Alternates%20in%20graphics%20variants%20%F0%9F%A4%9F%F0%9F%8F%BD%E2%9C%A8_%23art%20%23cameraroll.jpg",
+  "/%D0%9D%D0%B0%20%D0%B0%D0%B2%D1%83.jpg",
+  "/placeholder-5.svg",
+];
+
+const legacyCreateProfileAbi = [
+  {
+    inputs: [
+      { internalType: "string", name: "name", type: "string" },
+      { internalType: "string", name: "description", type: "string" },
+    ],
+    name: "createProfile",
+    outputs: [{ internalType: "uint256", name: "profileId", type: "uint256" }],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+] as const;
 
 export default function CreateProfilePage() {
   const router = useRouter();
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const publicClient = usePublicClient();
   const { writeContractAsync } = useWriteContract();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [summary, setSummary] = useState("");
-  const [selectedImage, setSelectedImage] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    setSelectedImage(getRandomPlaceholderImage());
-  }, []);
-
-  function assignRandomPlaceholder() {
-    setSelectedImage(getRandomPlaceholderImage());
-  }
-
-  function onImageUpload(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setSelectedImage(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
-  }
-
-  async function generateSummary() {
-    if (!description.trim()) return;
-
-    try {
-      setBusy(true);
-      setMessage("Generating credibility summary...");
-
-      const response = await fetch("/api/summary", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description }),
-      });
-
-      const data = (await response.json()) as { summary: string };
-      setSummary(data.summary);
-      setMessage("Summary generated.");
-    } catch {
-      setMessage("Could not generate summary.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function createProfile(event: FormEvent) {
     event.preventDefault();
-    if (!publicClient || !isConnected) return;
+    if (!publicClient || !isConnected || !address) return;
 
     try {
       setBusy(true);
       setMessage("Submitting profile on Monad...");
-
-      const finalDescription = summary
-        ? `${description}\n\nAI Summary: ${summary}`
-        : description;
 
       const currentCount = (await publicClient.readContract({
         address: VERISTAKE_ADDRESS,
@@ -85,20 +63,72 @@ export default function CreateProfilePage() {
         functionName: "profileCount",
       })) as bigint;
 
-      const hash = await writeContractAsync({
-        address: VERISTAKE_ADDRESS,
-        abi: veriStakeAbi,
-        functionName: "createProfile",
-        args: [name, finalDescription],
-      });
+      // Use Cloudinary URL if available, otherwise use placeholder
+      const finalImageUrl =
+        imageUrl ||
+        PLACEHOLDER_IMAGES[Number(currentCount) % PLACEHOLDER_IMAGES.length];
 
-      await publicClient.waitForTransactionReceipt({ hash });
-      saveProfileImageForId(
-        currentCount,
-        selectedImage || getRandomPlaceholderImage(),
-      );
+      let hash: `0x${string}`;
+      try {
+        await publicClient.estimateContractGas({
+          account: address,
+          address: VERISTAKE_ADDRESS,
+          abi: veriStakeAbi,
+          functionName: "createProfile",
+          args: [name, description, finalImageUrl],
+        });
+
+        hash = await writeContractAsync({
+          address: VERISTAKE_ADDRESS,
+          abi: veriStakeAbi,
+          functionName: "createProfile",
+          args: [name, description, finalImageUrl],
+        });
+      } catch {
+        // Fallback for legacy deployments that only accept (name, description).
+        setMessage(
+          "Legacy contract detected. Creating profile without on-chain image URL...",
+        );
+
+        await publicClient.estimateContractGas({
+          account: address,
+          address: VERISTAKE_ADDRESS,
+          abi: legacyCreateProfileAbi,
+          functionName: "createProfile",
+          args: [name, description],
+        });
+
+        hash = await writeContractAsync({
+          address: VERISTAKE_ADDRESS,
+          abi: legacyCreateProfileAbi,
+          functionName: "createProfile",
+          args: [name, description],
+        });
+      }
+
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+      let createdProfileId: bigint | null = null;
+      for (const log of receipt.logs) {
+        try {
+          const decoded = decodeEventLog({
+            abi: veriStakeAbi,
+            data: log.data,
+            topics: log.topics,
+          });
+
+          if (decoded.eventName === "ProfileCreated") {
+            createdProfileId = decoded.args.profileId as bigint;
+            break;
+          }
+        } catch {
+          // Ignore non-matching logs.
+        }
+      }
+
+      const targetProfileId = createdProfileId ?? currentCount;
       setMessage("Profile created successfully.");
-      router.push(`/profile/${currentCount.toString()}`);
+      router.push(`/profile/${targetProfileId.toString()}`);
     } catch (error) {
       setMessage(
         error instanceof Error ? error.message : "Profile creation failed.",
@@ -139,60 +169,50 @@ export default function CreateProfilePage() {
         />
 
         <label className="mb-2 block text-sm text-white/80">
-          Profile Image
+          Profile Image (Optional)
         </label>
         <div className="mb-4 rounded-md border border-white/15 bg-panelSoft p-3">
           <div className="mb-3 overflow-hidden rounded-md border border-white/10">
-            {selectedImage ? (
+            {imageUrl ? (
               <img
-                src={selectedImage}
+                src={imageUrl}
                 alt="Selected profile preview"
                 className="h-44 w-full object-cover"
               />
             ) : (
               <div className="flex h-44 items-center justify-center text-sm text-white/55">
-                No image selected yet
+                No image uploaded (will use placeholder)
               </div>
             )}
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <label className="cursor-pointer rounded-md border border-white/20 bg-panel px-3 py-2 text-xs font-semibold text-white transition hover:border-white/40">
-              Upload Image
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={onImageUpload}
-              />
-            </label>
-            <button
-              type="button"
-              onClick={assignRandomPlaceholder}
-              className="rounded-md border border-primary/50 bg-primary/20 px-3 py-2 text-xs font-semibold text-white transition hover:bg-primary/35"
-            >
-              Use Random Placeholder
-            </button>
-          </div>
+          <CldUploadWidget
+            uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
+            onSuccess={(results: CloudinaryUploadWidgetResults) => {
+              if (
+                results.event === "success" &&
+                typeof results.info === "object" &&
+                results.info?.secure_url
+              ) {
+                setImageUrl(results.info.secure_url);
+                setMessage("Image uploaded successfully.");
+              }
+            }}
+            onError={() => {
+              setMessage("Image upload failed.");
+            }}
+          >
+            {({ open }) => (
+              <button
+                type="button"
+                onClick={() => open()}
+                className="cursor-pointer rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary transition hover:border-primary/60 hover:bg-primary/20"
+              >
+                Upload to Cloudinary
+              </button>
+            )}
+          </CldUploadWidget>
         </div>
-
-        <button
-          type="button"
-          onClick={generateSummary}
-          disabled={busy || !description.trim()}
-          className="mb-3 rounded-md border border-primary/50 bg-primary/20 px-3 py-2 text-sm font-semibold text-white transition hover:bg-primary/35 disabled:opacity-40"
-        >
-          Generate AI Credibility Summary
-        </button>
-
-        {summary && (
-          <div className="mb-4 rounded-md border border-primary/40 bg-primary/10 p-3 text-sm text-white/90">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-              AI Summary
-            </p>
-            <p>{summary}</p>
-          </div>
-        )}
 
         <button
           type="submit"

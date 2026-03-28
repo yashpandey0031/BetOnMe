@@ -3,6 +3,7 @@ export const veriStakeAbi = [
     inputs: [
       { internalType: "string", name: "name", type: "string" },
       { internalType: "string", name: "description", type: "string" },
+      { internalType: "string", name: "imageUrl", type: "string" },
     ],
     name: "createProfile",
     outputs: [{ internalType: "uint256", name: "profileId", type: "uint256" }],
@@ -15,6 +16,7 @@ export const veriStakeAbi = [
     outputs: [
       { internalType: "string", name: "name", type: "string" },
       { internalType: "string", name: "description", type: "string" },
+      { internalType: "string", name: "imageUrl", type: "string" },
       { internalType: "uint256", name: "forStake", type: "uint256" },
       { internalType: "uint256", name: "againstStake", type: "uint256" },
       { internalType: "uint256", name: "reputationScore", type: "uint256" },
@@ -30,6 +32,7 @@ export const veriStakeAbi = [
     name: "getProfile",
     outputs: [
       { internalType: "string", name: "name", type: "string" },
+      { internalType: "string", name: "imageUrl", type: "string" },
       { internalType: "string", name: "description", type: "string" },
       { internalType: "uint256", name: "forStake", type: "uint256" },
       { internalType: "uint256", name: "againstStake", type: "uint256" },

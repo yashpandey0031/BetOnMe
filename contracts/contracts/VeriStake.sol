@@ -12,6 +12,7 @@ contract VeriStake {
     struct Profile {
         string name;
         string description;
+        string imageUrl;
         uint256 forStake;
         uint256 againstStake;
         uint256 reputationScore;
@@ -58,15 +59,16 @@ contract VeriStake {
     error InvalidAmount();
     error MissingEvidence();
     error InvalidInput();
-
-    function createProfile(string calldata name, string calldata description) external returns (uint256 profileId) {
-        if (bytes(name).length == 0 || bytes(description).length == 0) revert InvalidInput();
+, string calldata imageUrl) external returns (uint256 profileId) {
+        if (bytes(name).length == 0 || bytes(description).length == 0 || bytes(imageUrl).length == 0) revert InvalidInput();
 
         profileId = profileCount;
         profileCount += 1;
 
         profiles[profileId] = Profile({
             name: name,
+            description: description,
+            imageUrl: imageUrl
             description: description,
             forStake: 0,
             againstStake: 0,
@@ -122,7 +124,7 @@ contract VeriStake {
         view
         returns (
             string memory name,
-            string memory description,
+            string memory imageUrl,
             uint256 forStake,
             uint256 againstStake,
             uint256 totalStake,
@@ -136,6 +138,7 @@ contract VeriStake {
         Profile storage p = profiles[profileId];
         totalStake = p.forStake + p.againstStake;
 
+        return (p.name, p.description, p.imageUrl
         return (p.name, p.description, p.forStake, p.againstStake, totalStake, p.reputationScore, p.creator, p.createdAt);
     }
 

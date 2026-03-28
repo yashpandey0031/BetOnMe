@@ -9,11 +9,38 @@ import { veriStakeAbi } from "@/lib/abi";
 import { VERISTAKE_ADDRESS } from "@/lib/constants";
 import {
   getDefaultPlaceholderByProfileId,
-  getProfileImageForId,
   isPlaceholderImage,
 } from "@/lib/profileImages";
 import { ProfileData } from "@/lib/types";
 import { formatMon, formatScore, shortAddress } from "@/lib/utils";
+
+// Default placeholder images for fallback
+const PLACEHOLDER_IMAGES = [
+  "/download%20(4).jpg",
+  "/download%20(5).jpg",
+  "/Alternates%20in%20graphics%20variants%20%F0%9F%A4%9F%F0%9F%8F%BD%E2%9C%A8_%23art%20%23cameraroll.jpg",
+  "/%D0%9D%D0%B0%20%D0%B0%D0%B2%D1%83.jpg",
+  "/placeholder-5.svg",
+];
+
+const legacyGetProfileAbi = [
+  {
+    inputs: [{ internalType: "uint256", name: "profileId", type: "uint256" }],
+    name: "getProfile",
+    outputs: [
+      { internalType: "string", name: "name", type: "string" },
+      { internalType: "string", name: "description", type: "string" },
+      { internalType: "uint256", name: "forStake", type: "uint256" },
+      { internalType: "uint256", name: "againstStake", type: "uint256" },
+      { internalType: "uint256", name: "totalStake", type: "uint256" },
+      { internalType: "uint256", name: "reputationScore", type: "uint256" },
+      { internalType: "address", name: "creator", type: "address" },
+      { internalType: "uint256", name: "createdAt", type: "uint256" },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+] as const;
 
 type StakeLog = {
   profileId: bigint;
@@ -24,9 +51,60 @@ type StakeLog = {
   timestamp: bigint;
 };
 
+function isSafeImageUrl(value: string) {
+  if (!value || value.length > 2048) return false;
+  if (value.includes("\u0000")) return false;
+  return (
+    value.startsWith("http://") ||
+    value.startsWith("https://") ||
+    value.startsWith("/")
+  );
+}
+
+function isValidV2ProfileTuple(
+  tuple: [
+    string,
+    string,
+    string,
+    bigint,
+    bigint,
+    bigint,
+    bigint,
+    string,
+    bigint,
+  ],
+) {
+  const forStake = tuple[3];
+  const againstStake = tuple[4];
+  const totalStake = tuple[5];
+  const reputationScore = tuple[6];
+  const imageUrl = tuple[2];
+
+  const totalsMatch = forStake + againstStake === totalStake;
+  const reputationRangeOk = reputationScore >= 0n && reputationScore <= 10000n;
+
+  return totalsMatch && reputationRangeOk && isSafeImageUrl(imageUrl);
+}
+
+function isValidLegacyProfileTuple(
+  tuple: [string, string, bigint, bigint, bigint, bigint, string, bigint],
+) {
+  const forStake = tuple[2];
+  const againstStake = tuple[3];
+  const totalStake = tuple[4];
+  const reputationScore = tuple[5];
+
+  const totalsMatch = forStake + againstStake === totalStake;
+  const reputationRangeOk = reputationScore >= 0n && reputationScore <= 10000n;
+
+  return totalsMatch && reputationRangeOk;
+}
+
 export default function ProfilePage() {
   const params = useParams<{ id: string }>();
-  const profileId = BigInt(params.id || "0");
+  const rawProfileId = params.id || "0";
+  const isNumericProfileId = /^\d+$/.test(rawProfileId);
+  const profileId = isNumericProfileId ? BigInt(rawProfileId) : 0n;
   const publicClient = usePublicClient();
 
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -34,30 +112,76 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
 
   const loadProfile = useCallback(async () => {
-    if (!publicClient) return;
+    if (!publicClient || !isNumericProfileId) return;
 
     try {
       setLoading(true);
 
-      const result = (await publicClient.readContract({
-        address: VERISTAKE_ADDRESS,
-        abi: veriStakeAbi,
-        functionName: "getProfile",
-        args: [profileId],
-      })) as [string, string, bigint, bigint, bigint, bigint, string, bigint];
+      const fallbackImage =
+        PLACEHOLDER_IMAGES[Number(profileId) % PLACEHOLDER_IMAGES.length];
 
-      setProfile({
-        id: profileId,
-        imageUrl: getProfileImageForId(profileId),
-        name: result[0],
-        description: result[1],
-        forStake: result[2],
-        againstStake: result[3],
-        totalStake: result[4],
-        reputationScore: result[5],
-        creator: result[6],
-        createdAt: result[7],
-      });
+      let parsedProfile: ProfileData;
+      try {
+        const result = (await publicClient.readContract({
+          address: VERISTAKE_ADDRESS,
+          abi: veriStakeAbi,
+          functionName: "getProfile",
+          args: [profileId],
+        })) as [
+          string,
+          string,
+          string,
+          bigint,
+          bigint,
+          bigint,
+          bigint,
+          string,
+          bigint,
+        ];
+
+        if (!isValidV2ProfileTuple(result)) {
+          throw new Error("Invalid v2 profile tuple");
+        }
+
+        parsedProfile = {
+          id: profileId,
+          imageUrl: result[2],
+          name: result[0],
+          description: result[1],
+          forStake: result[3],
+          againstStake: result[4],
+          totalStake: result[5],
+          reputationScore: result[6],
+          creator: result[7],
+          createdAt: result[8],
+        };
+      } catch {
+        const legacy = (await publicClient.readContract({
+          address: VERISTAKE_ADDRESS,
+          abi: legacyGetProfileAbi,
+          functionName: "getProfile",
+          args: [profileId],
+        })) as [string, string, bigint, bigint, bigint, bigint, string, bigint];
+
+        if (!isValidLegacyProfileTuple(legacy)) {
+          throw new Error("Invalid legacy profile tuple");
+        }
+
+        parsedProfile = {
+          id: profileId,
+          imageUrl: fallbackImage,
+          name: legacy[0],
+          description: legacy[1],
+          forStake: legacy[2],
+          againstStake: legacy[3],
+          totalStake: legacy[4],
+          reputationScore: legacy[5],
+          creator: legacy[6],
+          createdAt: legacy[7],
+        };
+      }
+
+      setProfile(parsedProfile);
 
       const historyCount = (await publicClient.readContract({
         address: VERISTAKE_ADDRESS,
@@ -107,7 +231,7 @@ export default function ProfilePage() {
     } finally {
       setLoading(false);
     }
-  }, [profileId, publicClient]);
+  }, [isNumericProfileId, profileId, publicClient]);
 
   useEffect(() => {
     loadProfile();
@@ -131,6 +255,17 @@ export default function ProfilePage() {
     return (
       <div className="rounded-xl border border-white/10 bg-panel p-8 text-white/70">
         Loading profile...
+      </div>
+    );
+  }
+
+  if (!isNumericProfileId) {
+    return (
+      <div className="rounded-xl border border-white/10 bg-panel p-8 text-white/70">
+        Invalid profile id.{" "}
+        <Link href="/" className="text-primary">
+          Return home
+        </Link>
       </div>
     );
   }
