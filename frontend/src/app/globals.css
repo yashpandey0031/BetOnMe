@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0b0c10;
+  --foreground: #eef2f6;
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --positive: #10b981;
+  --positive-hover: #059669;
+  --negative: #ef4444;
+  --negative-hover: #dc2626;
+  --card-bg: #151821;
+  --border: #262b3d;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Inter', sans-serif;
+}
+
+@layer utilities {
+  .text-gradient {
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-image: linear-gradient(to right, #8b5cf6, #6366f1);
+  }
+}
