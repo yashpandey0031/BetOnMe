@@ -38,7 +38,7 @@ export default function RootLayout({
       <body>
         <WalletProvider>
           <Navbar />
-          <main className="mx-auto min-h-[calc(100vh-64px)] w-full max-w-6xl px-4 py-8">
+          <main className="mx-auto min-h-[calc(100vh-64px)] w-full max-w-[90rem] px-4 py-8 lg:px-6">
             {children}
           </main>
         </WalletProvider>

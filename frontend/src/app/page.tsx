@@ -250,18 +250,18 @@ export default function HomePage() {
 
   return (
     <section>
-      <div className="glass-card mb-8 overflow-hidden bg-heroGrid bg-[length:20px_20px] p-7 shadow-glow md:p-9">
-        <div className="relative z-10 max-w-4xl">
+      <div className="mb-8 overflow-hidden bg-heroGrid bg-[length:20px_20px] p-7 md:p-9">
+        <div className="relative z-10 max-w-5xl">
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.32em] text-primary">
             BetOnMe Protocol
           </p>
           <h2 className="mb-3 text-4xl font-bold text-white md:text-6xl">
             Bet On Your Reputation.
             <span className="block text-white/80">
-              Your Reputation Is At Stake.
+              Or Someone Else&apos;s...
             </span>
           </h2>
-          <p className="max-w-3xl text-sm text-white/70 md:text-lg">
+          <p className="max-w-4xl text-sm text-white/70 md:text-lg">
             BetOnMe turns credibility into a live market signal. Stake FOR
             trust, stake AGAINST falsehoods, and make accountability visible in
             public.
@@ -288,40 +288,42 @@ export default function HomePage() {
         <div className="pointer-events-none absolute -bottom-24 right-28 h-64 w-64 rounded-full bg-positive/20 blur-3xl" />
       </div>
 
-      <div id="market" className="mb-4 flex items-center justify-between">
-        <h3 className="text-xl font-semibold text-white">
-          Live Reputation Market
-        </h3>
-        <div className="flex items-center gap-3">
-          <span className="mono-data text-sm text-white/60">
-            {count} profiles
-          </span>
-          <button
-            type="button"
-            onClick={refreshMarket}
-            disabled={refreshing}
-            className="rounded-md border border-white/25 bg-panel/70 px-3 py-1.5 text-xs font-semibold text-white transition hover:border-white/45 disabled:opacity-40"
-          >
-            {refreshing ? "Refreshing..." : "Refresh"}
-          </button>
+      <div className="w-full">
+        <div id="market" className="mb-4 flex items-center justify-between">
+          <h3 className="text-xl font-semibold text-white">
+            Live Reputation Market
+          </h3>
+          <div className="flex items-center gap-3">
+            <span className="mono-data text-sm text-white/60">
+              {count} profiles
+            </span>
+            <button
+              type="button"
+              onClick={refreshMarket}
+              disabled={refreshing}
+              className="rounded-md border border-white/25 bg-panel/70 px-3 py-1.5 text-xs font-semibold text-white transition hover:border-white/45 disabled:opacity-40"
+            >
+              {refreshing ? "Refreshing..." : "Refresh"}
+            </button>
+          </div>
         </div>
-      </div>
 
-      {loading ? (
-        <div className="rounded-xl border border-white/10 bg-panel p-8 text-center text-white/70">
-          Loading profiles...
-        </div>
-      ) : profiles.length === 0 ? (
-        <div className="rounded-xl border border-white/10 bg-panel p-8 text-center text-white/70">
-          No profiles yet. Create the first credibility market.
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {profiles.map((profile) => (
-            <ProfileCard key={profile.id.toString()} profile={profile} />
-          ))}
-        </div>
-      )}
+        {loading ? (
+          <div className="rounded-xl border border-white/10 bg-panel p-8 text-center text-white/70">
+            Loading profiles...
+          </div>
+        ) : profiles.length === 0 ? (
+          <div className="rounded-xl border border-white/10 bg-panel p-8 text-center text-white/70">
+            No profiles yet. Create the first credibility market.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:gap-7">
+            {profiles.map((profile) => (
+              <ProfileCard key={profile.id.toString()} profile={profile} />
+            ))}
+          </div>
+        )}
+      </div>
     </section>
   );
 }
