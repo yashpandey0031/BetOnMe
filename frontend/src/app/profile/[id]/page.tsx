@@ -23,6 +23,10 @@ const PLACEHOLDER_IMAGES = [
   "/placeholder-5.svg",
 ];
 
+const HISTORY_BATCH_SIZE = 4;
+const HISTORY_MAX_ITEMS = 20;
+const HISTORY_BATCH_DELAY_MS = 120;
+
 const legacyGetProfileAbi = [
   {
     inputs: [{ internalType: "uint256", name: "profileId", type: "uint256" }],
@@ -98,6 +102,10 @@ function isValidLegacyProfileTuple(
   const reputationRangeOk = reputationScore >= 0n && reputationScore <= 10000n;
 
   return totalsMatch && reputationRangeOk;
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export default function ProfilePage() {
@@ -182,7 +190,15 @@ export default function ProfilePage() {
       }
 
       setProfile(parsedProfile);
+    } catch {
+      setProfile(null);
+      setRecentLogs([]);
+    } finally {
+      setLoading(false);
+    }
 
+    // Load recent activity separately so a history failure doesn't blank the profile.
+    try {
       const historyCount = (await publicClient.readContract({
         address: VERISTAKE_ADDRESS,
         abi: veriStakeAbi,
@@ -196,40 +212,57 @@ export default function ProfilePage() {
         return;
       }
 
-      const indices = [...Array(total).keys()];
-      const actions = await Promise.all(
-        indices.map(async (index) => {
-          const action = (await publicClient.readContract({
-            address: VERISTAKE_ADDRESS,
-            abi: veriStakeAbi,
-            functionName: "getStakeAction",
-            args: [profileId, BigInt(index)],
-          })) as {
-            user: string;
-            profileId: bigint;
-            isFor: boolean;
-            amount: bigint;
-            evidence: string;
-            timestamp: bigint;
-          };
-
-          return {
-            profileId: action.profileId,
-            user: action.user,
-            isFor: action.isFor,
-            amount: action.amount,
-            evidence: action.evidence || "No evidence",
-            timestamp: action.timestamp,
-          } satisfies StakeLog;
-        }),
+      const start = Math.max(0, total - HISTORY_MAX_ITEMS);
+      const indices = [...Array(total - start).keys()].map(
+        (offset) => start + offset,
       );
+      const actions: StakeLog[] = [];
+
+      for (let i = 0; i < indices.length; i += HISTORY_BATCH_SIZE) {
+        const batchIndices = indices.slice(i, i + HISTORY_BATCH_SIZE);
+        const batch = await Promise.all(
+          batchIndices.map(async (index) => {
+            try {
+              const action = (await publicClient.readContract({
+                address: VERISTAKE_ADDRESS,
+                abi: veriStakeAbi,
+                functionName: "getStakeAction",
+                args: [profileId, BigInt(index)],
+              })) as {
+                user: string;
+                profileId: bigint;
+                isFor: boolean;
+                amount: bigint;
+                evidence: string;
+                timestamp: bigint;
+              };
+
+              return {
+                profileId: action.profileId,
+                user: action.user,
+                isFor: action.isFor,
+                amount: action.amount,
+                evidence: action.evidence || "No evidence",
+                timestamp: action.timestamp,
+              } satisfies StakeLog;
+            } catch {
+              return null;
+            }
+          }),
+        );
+
+        actions.push(
+          ...batch.filter((item): item is StakeLog => item !== null),
+        );
+
+        if (i + HISTORY_BATCH_SIZE < indices.length) {
+          await delay(HISTORY_BATCH_DELAY_MS);
+        }
+      }
 
       setRecentLogs(actions.reverse());
     } catch {
-      setProfile(null);
       setRecentLogs([]);
-    } finally {
-      setLoading(false);
     }
   }, [isNumericProfileId, profileId, publicClient]);
 
