@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" fill="none">
+  <rect width="800" height="600" fill="#0F1430"/>
+  <circle cx="640" cy="140" r="140" fill="#2C3D8F" fill-opacity="0.5"/>
+  <circle cx="120" cy="500" r="180" fill="#2A8B6F" fill-opacity="0.35"/>
+  <rect x="80" y="120" width="640" height="360" rx="28" fill="#121A3E" stroke="#2C3D8F"/>
+  <text x="400" y="270" text-anchor="middle" fill="#93A7FF" font-family="Arial, Helvetica, sans-serif" font-size="44" font-weight="700">VeriStake</text>
+  <text x="400" y="320" text-anchor="middle" fill="#BFD1FF" font-family="Arial, Helvetica, sans-serif" font-size="26">Community Profile Placeholder</text>
+</svg>

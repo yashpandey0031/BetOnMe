@@ -1,77 +1,132 @@
-# VeriStake - Decentralized Credibility Layer
+# VeriStake
 
-VeriStake is a production-quality hackathon MVP designed for the **Monad testnet**. It provides a decentralized reputation market where credibility is continuously priced by the community. Users can stake FOR (long) or AGAINST (short) profiles, turning reputation into a dynamic, market-driven signal instead of a static metric.
+VeriStake is a decentralized credibility layer where reputation is continuously priced by community stake on Monad testnet.
 
-## 🚀 Key Features
-- **Profile System**: Decentralized identities anchored to the blockchain.
-- **Reputation Market**: Buy or Sell credibility. All actions require a reason (evidence).
-- **AI Credibility Summary**: Evaluates profile claims to give users an immediate baseline recommendation.
-- **Monad Burst Interaction**: A demonstration feature that simulates high-throughput stake transactions rapidly, showing off Monad's 10,000 TPS capabilities.
+The product narrative is trust and accountability, not betting:
 
----
+- Stake FOR a profile when you believe claims are credible.
+- Stake AGAINST when you believe claims are unreliable.
+- Reputation score updates after every action.
 
-## 💻 Tech Stack
-- **Smart Contracts**: Solidity ^0.8.20, Hardhat
-- **Frontend**: Next.js 14 (App Router), React, Tailwind CSS
-- **Web3 Integration**: Wagmi v2, Viem
-- **Icons**: Lucide React
+## MVP Scope
 
----
+- On-chain profile creation: name + description.
+- Live reputation market: FOR and AGAINST staking.
+- Evidence requirement: stake at or above threshold requires reason.
+- Real-time refresh: contract events update profile views.
+- Monad burst demo: one button triggers multiple rapid stake actions.
+- Optional AI summary: credibility summary while creating a profile.
 
-## 🛠️ Local Setup & Running the Frontend
+## Project Structure
 
-1. **Install Dependencies**
-   ```bash
-   cd frontend
-   npm install
-   ```
+- contracts: Solidity contract + Hardhat deploy setup.
+- frontend: Next.js App Router UI + wagmi/viem integration.
 
-2. **Configure Contract Address**
-   Once you deploy the smart contract (see below), open `frontend/src/lib/constants.ts` and set your `CONTRACT_ADDRESS`.
+## Smart Contract
 
-3. **Run the Development Server**
-   ```bash
-   npm run dev
-   ```
-   *The app will be available at `http://localhost:3000`.*
+Main contract: contracts/contracts/VeriStake.sol
 
----
+Implemented methods:
 
-## 📦 Smart Contract Deployment (Monad Testnet)
+- createProfile(name, description)
+- stake(profileId, isFor, evidence) payable
+- burstStake(profileId, forCount, againstCount, evidence) payable
+- getProfile(profileId)
 
-1. **Navigate to Contracts Directory**
-   ```bash
-   cd contracts
-   npm install
-   ```
+Core on-chain state:
 
-2. **Set up your Private Key**
-   You can either export your private key or use a `.env` file for Hardhat:
-   ```bash
-   export PRIVATE_KEY="your-wallet-private-key-here"
-   ```
+- forStake
+- againstStake
+- reputationScore
+- total stake derived as forStake + againstStake
 
-3. **Deploy to Monad Testnet**
-   *Note: Ensure you have testnet MONAD in your wallet. (Use the official Monad faucet).*
-   ```bash
-   npx hardhat run scripts/deploy.js --network monadTestnet
-   ```
+Reputation formula:
 
-   **Output:**
-   ```
-   Deploying VeriStake...
-   VeriStake deployed to: 0xYourContractAddressHere
-   ```
-   Copy the contract address and paste it into `frontend/src/lib/constants.ts`.
+- score = (forStake \* 10000) / (forStake + againstStake)
+- neutral baseline is 5000 when no stake exists
 
----
+Events:
 
-## 🎨 Design System
-- **Dark Mode Native**: Core background (`#0b0c10`), Card background (`#151821`).
-- **Typography**: Clean, sans-serif *Inter* for a modern Web3 feel.
-- **Accents**: 
-  - Indigo/Purple for primary actions (Connect Wallet, Create Profile)
-  - Neon Green (`#10b981`) for Positive Staking (Credibility)
-  - Red (`#ef4444`) for Negative Staking (Unreliable)
+- ProfileCreated
+- Staked
 
-*Built for demo velocity. Keep building!*
+## Monad Testnet Deployment
+
+1. Install dependencies
+
+```bash
+cd contracts
+npm install
+```
+
+1. Create env file
+
+```bash
+cp .env.example .env
+```
+
+Set values in .env:
+
+- PRIVATE_KEY=your_private_key_without_0x
+- `MONAD_RPC_URL=https://testnet-rpc.monad.xyz`
+
+1. Compile and deploy
+
+```bash
+npm run compile
+npm run deploy:monad
+```
+
+Expected output:
+
+- VeriStake deployed to: 0x...
+
+## Frontend Setup
+
+1. Install dependencies
+
+```bash
+cd frontend
+npm install
+```
+
+1. Configure frontend env
+
+```bash
+cp .env.example .env.local
+```
+
+Update values:
+
+- NEXT_PUBLIC_VERISTAKE_ADDRESS=deployed_contract_address
+- `NEXT_PUBLIC_MONAD_RPC_URL=https://testnet-rpc.monad.xyz`
+- OPENAI_API_KEY=optional_for_ai_summary
+
+1. Run app
+
+```bash
+npm run dev
+```
+
+Open <http://localhost:3000>
+
+## MetaMask Requirements
+
+- Connect wallet from the top bar.
+- Switch to Monad Testnet in MetaMask (the UI prompts switch if needed).
+- Fund wallet with Monad testnet tokens before staking.
+
+## 3-Minute Live Demo Flow
+
+1. Connect MetaMask.
+2. Create a profile and generate AI credibility summary.
+3. Open that profile.
+4. Stake FOR with evidence.
+5. Stake AGAINST with evidence.
+6. Press Monad Burst Interaction and show rapid score updates.
+
+## Notes for Judges
+
+- VeriStake turns credibility into a transparent, dynamic market signal.
+- Evidence-backed staking creates accountability.
+- Monad throughput is demonstrated through burst interactions and fast UI refresh.
