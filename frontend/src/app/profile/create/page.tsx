@@ -111,7 +111,7 @@ export default function CreateProfilePage() {
   return (
     <section className="mx-auto max-w-2xl">
       <div className="mb-6">
-        <h2 className="text-3xl font-bold text-white">
+        <h2 className="text-4xl font-bold text-white">
           Create Reputation Profile
         </h2>
         <p className="mt-2 text-sm text-white/70">
@@ -119,10 +119,7 @@ export default function CreateProfilePage() {
         </p>
       </div>
 
-      <form
-        onSubmit={createProfile}
-        className="rounded-xl border border-white/10 bg-panel p-5"
-      >
+      <form onSubmit={createProfile} className="glass-card p-5 shadow-glow">
         <label className="mb-2 block text-sm text-white/80">Name</label>
         <input
           value={name}

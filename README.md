@@ -100,7 +100,7 @@ Update values:
 
 - NEXT_PUBLIC_VERISTAKE_ADDRESS=deployed_contract_address
 - `NEXT_PUBLIC_MONAD_RPC_URL=https://testnet-rpc.monad.xyz`
-- OPENAI_API_KEY=optional_for_ai_summary
+- GEMINI_API_KEY=optional_for_ai_summary
 
 1. Run app
 

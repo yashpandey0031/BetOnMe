@@ -54,7 +54,7 @@ export default function WalletConnect() {
       )}
       <button
         onClick={() => disconnect()}
-        className="rounded-md border border-white/20 bg-panel px-4 py-2 text-sm font-semibold text-white transition hover:border-white/40"
+        className="mono-data rounded-md border border-white/20 bg-panel px-4 py-2 text-sm font-semibold text-white transition hover:border-white/40"
       >
         {shortAddress(address || "")}
       </button>

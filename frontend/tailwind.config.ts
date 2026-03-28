@@ -9,20 +9,20 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        bg: "#07080d",
-        panel: "#111425",
-        panelSoft: "#161b32",
-        primary: "#7c3aed",
-        primarySoft: "#4f46e5",
-        positive: "#39ff90",
-        negative: "#ff4d61",
+        bg: "#050505",
+        panel: "#1a1a1a",
+        panelSoft: "#131313",
+        primary: "#9945ff",
+        primarySoft: "#7f33db",
+        positive: "#14f195",
+        negative: "#ff4b4b",
       },
       boxShadow: {
-        glow: "0 0 0 1px rgba(124, 58, 237, 0.35), 0 8px 40px rgba(56, 24, 120, 0.35)",
+        glow: "0 0 0 1px rgba(153, 69, 255, 0.35), 0 18px 44px rgba(0, 0, 0, 0.45)",
       },
       backgroundImage: {
         heroGrid:
-          "radial-gradient(circle at 1px 1px, rgba(124, 58, 237, 0.17) 1px, transparent 0)",
+          "radial-gradient(circle at 1px 1px, rgba(153, 69, 255, 0.22) 1px, transparent 0)",
       },
     },
   },

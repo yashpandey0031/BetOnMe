@@ -23,6 +23,9 @@ export default function StakePanel({
   const [amount, setAmount] = useState("0.01");
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
+  const [activeAction, setActiveAction] = useState<
+    "for" | "against" | "burst" | null
+  >(null);
   const [message, setMessage] = useState<string | null>(null);
 
   const evidenceRequired = useMemo(
@@ -39,6 +42,7 @@ export default function StakePanel({
 
     try {
       setBusy(true);
+      setActiveAction(isFor ? "for" : "against");
       setMessage("Submitting stake transaction...");
 
       const hash = await writeContractAsync({
@@ -58,6 +62,7 @@ export default function StakePanel({
       );
     } finally {
       setBusy(false);
+      setActiveAction(null);
     }
   }
 
@@ -70,6 +75,7 @@ export default function StakePanel({
 
     try {
       setBusy(true);
+      setActiveAction("burst");
       setMessage("Running Monad burst interaction...");
 
       const hash = await writeContractAsync({
@@ -91,11 +97,12 @@ export default function StakePanel({
       );
     } finally {
       setBusy(false);
+      setActiveAction(null);
     }
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-panel p-5">
+    <div className="glass-card p-5">
       <h3 className="mb-4 text-lg font-semibold text-white">
         Stake Your Conviction
       </h3>
@@ -107,7 +114,7 @@ export default function StakePanel({
         min="0.001"
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
-        className="mb-4 w-full rounded-md border border-white/15 bg-panelSoft px-3 py-2 text-white outline-none transition focus:border-primary"
+        className="mono-data mb-4 w-full rounded-md border border-white/15 bg-panelSoft px-3 py-2 text-white outline-none transition focus:border-primary"
       />
 
       <label className="mb-2 block text-sm text-white/80">
@@ -130,14 +137,14 @@ export default function StakePanel({
         <button
           onClick={() => runStake(true)}
           disabled={busy || !isConnected}
-          className="rounded-md border border-positive/40 bg-positive/20 px-4 py-2 font-semibold text-positive transition hover:bg-positive/30 disabled:opacity-40"
+          className={`rounded-md border border-positive/40 bg-positive/20 px-4 py-2 font-semibold text-positive transition hover:bg-positive/30 disabled:opacity-40 ${activeAction === "for" ? "stake-pulse" : ""}`}
         >
           Stake FOR
         </button>
         <button
           onClick={() => runStake(false)}
           disabled={busy || !isConnected}
-          className="rounded-md border border-negative/40 bg-negative/20 px-4 py-2 font-semibold text-negative transition hover:bg-negative/30 disabled:opacity-40"
+          className={`rounded-md border border-negative/40 bg-negative/20 px-4 py-2 font-semibold text-negative transition hover:bg-negative/30 disabled:opacity-40 ${activeAction === "against" ? "stake-pulse" : ""}`}
         >
           Stake AGAINST
         </button>
@@ -146,7 +153,7 @@ export default function StakePanel({
       <button
         onClick={runBurst}
         disabled={busy || !isConnected}
-        className="mt-3 w-full rounded-md border border-primary/50 bg-primary/20 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/35 disabled:opacity-40"
+        className={`mt-3 w-full rounded-md border border-primary/50 bg-primary/20 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/35 disabled:opacity-40 ${activeAction === "burst" ? "stake-pulse" : ""}`}
       >
         Monad Burst Interaction (5 FOR + 2 AGAINST)
       </button>

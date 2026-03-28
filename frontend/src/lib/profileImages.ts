@@ -52,6 +52,10 @@ export function saveProfileImageForId(profileId: bigint, imageUrl: string) {
   safeWriteImageMap(imageMap);
 }
 
+export function isPlaceholderImage(imageUrl: string) {
+  return imageUrl.startsWith("/");
+}
+
 export function getProfileImageForId(profileId: bigint) {
   const imageMap = safeReadImageMap();
   return (

@@ -38,45 +38,59 @@ export async function POST(request: Request) {
       );
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ summary: fallbackSummary(description) });
     }
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [
+              {
+                text: "You generate concise credibility summaries for a public accountability platform. Be balanced, cautious, and non-defamatory.",
+              },
+            ],
+          },
+          contents: [
+            {
+              parts: [
+                {
+                  text: `Profile description: ${description}\n\nGive a 1-2 sentence credibility summary for community staking decisions.`,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: 90,
+          },
+        }),
       },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You generate concise credibility summaries for a public accountability platform. Be balanced, cautious, and non-defamatory.",
-          },
-          {
-            role: "user",
-            content: `Profile description: ${description}\n\nGive a 1-2 sentence credibility summary for community staking decisions.`,
-          },
-        ],
-        temperature: 0.4,
-        max_tokens: 90,
-      }),
-    });
+    );
 
     if (!response.ok) {
       return NextResponse.json({ summary: fallbackSummary(description) });
     }
 
     const data = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
+      candidates?: Array<{
+        content?: {
+          parts?: Array<{
+            text?: string;
+          }>;
+        };
+      }>;
     };
 
     const summary =
-      data.choices?.[0]?.message?.content?.trim() ||
+      data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
       fallbackSummary(description);
     return NextResponse.json({ summary });
   } catch {

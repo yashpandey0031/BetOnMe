@@ -65,15 +65,6 @@ export default function HomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [count, publicClient]);
 
-  useEffect(() => {
-    const id = setInterval(() => {
-      refetchCount();
-      loadProfiles();
-    }, 7000);
-    return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refetchCount, count]);
-
   useWatchContractEvent({
     address: VERISTAKE_ADDRESS,
     abi: veriStakeAbi,
@@ -86,33 +77,51 @@ export default function HomePage() {
 
   return (
     <section>
-      <div className="mb-8 rounded-2xl border border-white/10 bg-heroGrid bg-[length:22px_22px] bg-panel p-6">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.25em] text-primary">
-          Restore Trust and Accountability
-        </p>
-        <h2 className="mb-3 text-3xl font-bold text-white md:text-4xl">
-          VeriStake: Decentralized Credibility Layer
-        </h2>
-        <p className="max-w-3xl text-sm text-white/70 md:text-base">
-          Credibility should be earned continuously. Stake FOR reliable voices.
-          Stake AGAINST unreliable claims. On Monad testnet, every action
-          updates reputation in near real time.
-        </p>
-        <div className="mt-5">
-          <Link
-            href="/profile/create"
-            className="inline-flex rounded-md border border-primary/60 bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-primarySoft"
-          >
-            Create a Profile
-          </Link>
+      <div className="glass-card mb-8 overflow-hidden bg-heroGrid bg-[length:20px_20px] p-7 shadow-glow md:p-9">
+        <div className="relative z-10 max-w-4xl">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.32em] text-primary">
+            BetOnMe Protocol
+          </p>
+          <h2 className="mb-3 text-4xl font-bold text-white md:text-6xl">
+            Bet On Your Reputation.
+            <span className="block text-white/80">
+              Your Reputation Is At Stake.
+            </span>
+          </h2>
+          <p className="max-w-3xl text-sm text-white/70 md:text-lg">
+            BetOnMe turns credibility into a live market signal. Stake FOR
+            trust, stake AGAINST falsehoods, and make accountability visible in
+            public.
+          </p>
+          <p className="mt-3 mono-data text-xs uppercase tracking-[0.22em] text-white/50">
+            Evidence-backed conviction on Monad testnet
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link
+              href="/profile/create"
+              className="inline-flex rounded-md border border-primary/60 bg-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-primarySoft"
+            >
+              Create a Profile
+            </Link>
+            <a
+              href="#market"
+              className="inline-flex rounded-md border border-white/25 bg-panel/60 px-5 py-2.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:border-white/45"
+            >
+              Explore Live Market
+            </a>
+          </div>
         </div>
+        <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-primary/30 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 right-28 h-64 w-64 rounded-full bg-positive/20 blur-3xl" />
       </div>
 
-      <div className="mb-4 flex items-center justify-between">
+      <div id="market" className="mb-4 flex items-center justify-between">
         <h3 className="text-xl font-semibold text-white">
           Live Reputation Market
         </h3>
-        <span className="text-sm text-white/60">{count} profiles</span>
+        <span className="mono-data text-sm text-white/60">
+          {count} profiles
+        </span>
       </div>
 
       {loading ? (
