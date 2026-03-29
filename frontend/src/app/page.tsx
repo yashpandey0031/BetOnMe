@@ -262,9 +262,9 @@ export default function HomePage() {
             </span>
           </h2>
           <p className="max-w-4xl text-sm text-white/70 md:text-lg">
-            BetOnMe turns credibility into a live market signal. Stake FOR
-            trust, stake AGAINST falsehoods, and make accountability visible in
-            public.
+            BetOnMe turns reputation into something you can actually bet on.
+            Stake FOR someone you trust. Stake AGAINST someone you don't.
+            Everything on-chain, everything public.
           </p>
           <p className="mt-3 mono-data text-xs uppercase tracking-[0.22em] text-white/50">
             Evidence-backed conviction on Monad testnet
